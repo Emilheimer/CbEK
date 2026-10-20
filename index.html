@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="de" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CbEK – Minecraft Mods & Mechanics</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: VT323 (Minecraft Pixel Font) & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=VT323&display=swap" rel="stylesheet">
+    <!-- Three.js for 3D Floating Blocks -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        obsidian: {
+                            900: '#0B0D12',
+                            800: '#12151D',
+                            700: '#1A1E29',
+                            600: '#262C3D',
+                        },
+                        emerald: {
+                            glow: '#00FF85',
+                            dark: '#00AA55',
+                        },
+                        diamond: {
+                            glow: '#00E5FF',
+                            dark: '#0099B8',
+                        },
+                        modrinth: '#1BD96A'
+                    },
+                    fontFamily: {
+                        pixel: ['VT323', 'monospace'],
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Enchantment Glow Effect */
+        .enchantment-glow {
+            text-shadow: 0 0 10px rgba(0, 255, 133, 0.6), 0 0 20px rgba(0, 229, 255, 0.4);
+            animation: pulse-glow 3s infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            0% {
+                text-shadow: 0 0 8px rgba(0, 255, 133, 0.5), 0 0 15px rgba(0, 229, 255, 0.3);
+            }
+            100% {
+                text-shadow: 0 0 18px rgba(0, 255, 133, 0.9), 0 0 30px rgba(0, 229, 255, 0.7);
+            }
+        }
+
+        .card-glow:hover {
+            box-shadow: 0 0 25px -5px rgba(0, 255, 133, 0.25), 0 0 15px -5px rgba(0, 229, 255, 0.2);
+            border-color: rgba(0, 255, 133, 0.5);
+        }
+
+        /* Glassmorphism Navigation */
+        .glass-panel {
+            background: rgba(18, 21, 29, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Pixelated crisp image rendering for Minecraft style assets */
+        .pixelated {
+            image-rendering: pixelated;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B0D12;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #262C3D;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00FF85;
+        }
+    </style>
+</head>
+<body class="bg-obsidian-900 text-gray-200 font-sans antialiased selection:bg-emerald-glow selection:text-obsidian-900 overflow-x-hidden min-h-screen flex flex-col justify-between">
+
+    <!-- 3D Canvas Background -->
+    <div id="canvas-container" class="fixed inset-0 pointer-events-none z-0 opacity-60"></div>
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-50 glass-panel border-b border-obsidian-700/50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            
+            <!-- Logo & Brand -->
+            <a href="#" class="flex items-center space-x-3 group cursor-pointer" onclick="playSound('click')">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-diamond-500 flex items-center justify-center p-0.5 shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform duration-300">
+                    <div class="w-full h-full bg-obsidian-900 rounded-[7px] flex items-center justify-center">
+                        <i class="fa-solid font-pixel text-2xl text-emerald-glow font-bold group-hover:rotate-12 transition-transform">C</i>
+                    </div>
+                </div>
+                <div>
+                    <span class="font-pixel text-3xl font-bold tracking-wider text-white enchantment-glow">CbEK</span>
+                    <span class="text-xs block text-gray-400 -mt-2 font-mono uppercase tracking-widest">Modding Team</span>
+                </div>
+            </a>
+
+            <!-- Desktop Nav Links -->
+            <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
+                <a href="#mods" onclick="playSound('hover')" class="text-gray-300 hover:text-emerald-glow transition-colors py-1 hover:border-b-2 hover:border-emerald-glow">Mods & Projects</a>
+                <a href="#team" onclick="playSound('hover')" class="text-gray-300 hover:text-emerald-glow transition-colors py-1 hover:border-b-2 hover:border-emerald-glow">Team</a>
+                <a href="https://modrinth.com" target="_blank" onclick="playSound('hover')" class="text-gray-300 hover:text-modrinth transition-colors flex items-center space-x-1.5">
+                    <i class="fa-solid fa-cubes text-modrinth"></i>
+                    <span>Modrinth Profil</span>
+                </a>
+                <a href="https://discord.gg" target="_blank" onclick="playSound('hover')" class="text-gray-300 hover:text-indigo-400 transition-colors flex items-center space-x-1.5">
+                    <i class="fa-brands fa-discord text-indigo-400"></i>
+                    <span>Discord</span>
+                </a>
+            </nav>
+
+            <!-- Audio & Action Buttons -->
+            <div class="flex items-center space-x-4">
+                <!-- Sound Toggle -->
+                <button id="audio-toggle" onclick="toggleAudio()" class="p-2.5 rounded-lg bg-obsidian-800 hover:bg-obsidian-700 text-gray-300 hover:text-emerald-glow border border-obsidian-600/50 transition-all focus:outline-none" title="Soundeffekte umschalten">
+                    <i id="audio-icon" class="fa-solid fa-volume-high text-emerald-glow"></i>
+                </button>
+
+                <!-- Mobile Menu Button -->
+                <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="md:hidden p-2.5 rounded-lg bg-obsidian-800 text-gray-300 hover:text-white border border-obsidian-600/50">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Nav Menu -->
+        <div id="mobile-menu" class="hidden md:hidden glass-panel border-b border-obsidian-700 px-4 pt-2 pb-4 space-y-2">
+            <a href="#mods" onclick="toggleMobileMenu(); playSound('click')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-obsidian-700 hover:text-emerald-glow">Mods & Projects</a>
+            <a href="#team" onclick="toggleMobileMenu(); playSound('click')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-obsidian-700 hover:text-emerald-glow">Team</a>
+            <a href="https://modrinth.com" target="_blank" class="block px-3 py-2 rounded-md text-base font-medium text-modrinth hover:bg-obsidian-700">Modrinth Profil</a>
+            <a href="https://discord.gg" target="_blank" class="block px-3 py-2 rounded-md text-base font-medium text-indigo-400 hover:bg-obsidian-700">Discord Community</a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="relative z-10 flex-grow">
+
+        <!-- Hero Section -->
+        <section class="relative pt-20 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+            
+            <!-- Badge -->
+            <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-glow text-xs font-semibold tracking-wide uppercase mb-8 backdrop-blur-md">
+                <span class="w-2 h-2 rounded-full bg-emerald-glow animate-ping"></span>
+                <span>Offizielles CbEK Modding HQ</span>
+            </div>
+
+            <!-- Main Title -->
+            <h1 class="text-5xl sm:text-7xl lg:text-8xl font-pixel tracking-wider text-white mb-6">
+                Willkommen bei <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-glow via-diamond-glow to-emerald-glow enchantment-glow">CbEK</span>
+            </h1>
+
+            <p class="max-w-2xl mx-auto text-lg sm:text-xl text-gray-300 font-light leading-relaxed mb-10">
+                High-Quality Mods & unique Gameplay Mechanics for Minecraft. Designed for <span class="text-emerald-glow font-medium">Fabric</span>, <span class="text-orange-400 font-medium">Forge</span> & <span class="text-cyan-400 font-medium">NeoForge</span>.
+            </p>
+
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+                <a href="#mods" onclick="playSound('click')" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-obsidian-900 font-bold text-base shadow-lg shadow-emerald-500/25 transition-all transform hover:-translate-y-0.5 flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-[#fa-solid] fa-compass"></i>
+                    <span>Mods erkunden</span>
+                </a>
+                <a href="https://modrinth.com" target="_blank" onclick="playSound('click')" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 text-white font-semibold text-base border border-obsidian-600 transition-all flex items-center justify-center space-x-2.5 hover:border-modrinth">
+                    <i class="fa-solid fa-cubes text-modrinth"></i>
+                    <span>Modrinth Seite</span>
+                </a>
+            </div>
+
+            <!-- Live Stats Banner -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+                <div class="glass-panel p-5 rounded-2xl border border-obsidian-700">
+                    <div class="text-3xl font-pixel text-emerald-glow mb-1">1.2M+</div>
+                    <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Total Downloads</div>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl border border-obsidian-700">
+                    <div class="text-3xl font-pixel text-diamond-glow mb-1">6+</div>
+                    <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Aktive Mods</div>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl border border-obsidian-700">
+                    <div class="text-3xl font-pixel text-emerald-glow mb-1">1.21.x</div>
+                    <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Ready Support</div>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl border border-obsidian-700">
+                    <div class="text-3xl font-pixel text-diamond-glow mb-1">100%</div>
+                    <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Open Source</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Mod Showcase Grid Section -->
+        <section id="mods" class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+                <div>
+                    <h2 class="text-3xl sm:text-4xl font-pixel text-white mb-2 flex items-center gap-3">
+                        <i class="fa-solid fa-boxes-stacked text-emerald-glow text-2xl"></i>
+                        <span>CbEK Mod Bibliothek</span>
+                    </h2>
+                    <p class="text-gray-400 text-sm">Entdecke unsere neuesten Erweiterungen für dein Minecraft Experience.</p>
+                </div>
+
+                <!-- Filter Controls -->
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="filterMods('all')" class="filter-btn active px-4 py-2 rounded-lg bg-emerald-500 text-obsidian-900 text-xs font-bold uppercase transition-all">Alle</button>
+                    <button onclick="filterMods('fabric')" class="filter-btn px-4 py-2 rounded-lg bg-obsidian-800 text-gray-300 hover:text-white border border-obsidian-700 text-xs font-bold uppercase transition-all">Fabric</button>
+                    <button onclick="filterMods('forge')" class="filter-btn px-4 py-2 rounded-lg bg-obsidian-800 text-gray-300 hover:text-white border border-obsidian-700 text-xs font-bold uppercase transition-all">Forge / NeoForge</button>
+                </div>
+            </div>
+
+            <!-- Mod Cards Grid -->
+            <div id="mod-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Mod Cards will be injected via JS -->
+            </div>
+        </section>
+
+        <!-- Team Section -->
+        <section id="team" class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-obsidian-800/80">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl sm:text-4xl font-pixel text-white mb-2">Das CbEK Entwickler Team</h2>
+                <p class="text-gray-400 text-sm max-w-xl mx-auto">Die Köpfe hinter den Mods, Texturen und Codebases.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Team Member 1 -->
+                <div class="glass-panel p-6 rounded-2xl text-center border border-obsidian-700 hover:border-emerald-glow/50 transition-all group">
+                    <img src="https://mc-heads.net/avatar/Steve/100" alt="Founder" class="w-20 h-20 mx-auto rounded-xl mb-4 pixelated shadow-md group-hover:scale-105 transition-transform">
+                    <h3 class="text-lg font-bold text-white group-hover:text-emerald-glow transition-colors">CbEK_Lead</h3>
+                    <p class="text-xs text-emerald-glow font-mono mb-3">Founder & Lead Dev</p>
+                    <p class="text-xs text-gray-400 mb-4">Spezialisiert auf Core Systems, Networking und Forge/Fabric APIs.</p>
+                    <div class="flex justify-center space-x-3 text-gray-400">
+                        <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-github"></i></a>
+                        <a href="#" class="hover:text-modrinth transition-colors"><i class="fa-solid fa-cubes"></i></a>
+                    </div>
+                </div>
+
+                <!-- Team Member 2 -->
+                <div class="glass-panel p-6 rounded-2xl text-center border border-obsidian-700 hover:border-emerald-glow/50 transition-all group">
+                    <img src="https://mc-heads.net/avatar/Alex/100" alt="Pixel Artist" class="w-20 h-20 mx-auto rounded-xl mb-4 pixelated shadow-md group-hover:scale-105 transition-transform">
+                    <h3 class="text-lg font-bold text-white group-hover:text-emerald-glow transition-colors">VoxelCrafted</h3>
+                    <p class="text-xs text-diamond-glow font-mono mb-3">3D Artist & Texture Lead</p>
+                    <p class="text-xs text-gray-400 mb-4">Erstellt fesselnde Blockbench Modelle und detailgetreue Mod-Texturen.</p>
+                    <div class="flex justify-center space-x-3 text-gray-400">
+                        <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-x-twitter"></i></a>
+                        <a href="#" class="hover:text-modrinth transition-colors"><i class="fa-solid fa-cubes"></i></a>
+                    </div>
+                </div>
+
+                <!-- Team Member 3 -->
+                <div class="glass-panel p-6 rounded-2xl text-center border border-obsidian-700 hover:border-emerald-glow/50 transition-all group">
+                    <img src="https://mc-heads.net/avatar/Meb/100" alt="Developer" class="w-20 h-20 mx-auto rounded-xl mb-4 pixelated shadow-md group-hover:scale-105 transition-transform">
+                    <h3 class="text-lg font-bold text-white group-hover:text-emerald-glow transition-colors">ByteMiner</h3>
+                    <p class="text-xs text-emerald-glow font-mono mb-3">Gameplay Engineer</p>
+                    <p class="text-xs text-gray-400 mb-4">Fokussiert auf Survival-Mechaniken, Balancierung und UI/UX Interfaces.</p>
+                    <div class="flex justify-center space-x-3 text-gray-400">
+                        <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-github"></i></a>
+                    </div>
+                </div>
+
+                <!-- Team Member 4 -->
+                <div class="glass-panel p-6 rounded-2xl text-center border border-obsidian-700 hover:border-emerald-glow/50 transition-all group">
+                    <img src="https://mc-heads.net/avatar/Notch/100" alt="QA & Community" class="w-20 h-20 mx-auto rounded-xl mb-4 pixelated shadow-md group-hover:scale-105 transition-transform">
+                    <h3 class="text-lg font-bold text-white group-hover:text-emerald-glow transition-colors">RedstoneGuru</h3>
+                    <p class="text-xs text-purple-400 font-mono mb-3">QA & Community Lead</p>
+                    <p class="text-xs text-gray-400 mb-4">Sorgt für bugfreie Releases und leitet den offiziellen Discord Support.</p>
+                    <div class="flex justify-center space-x-3 text-gray-400">
+                        <a href="#" class="hover:text-indigo-400 transition-colors"><i class="fa-brands fa-discord"></i></a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal für Mod Details & Dependency Snippets -->
+    <div id="mod-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
+        <div class="glass-panel bg-obsidian-800 border border-obsidian-600 rounded-2xl max-w-2xl w-full p-6 sm:p-8 relative shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white w-8 h-8 rounded-lg bg-obsidian-700 flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex items-center space-x-4 mb-6">
+                <div id="modal-icon" class="w-16 h-16 rounded-xl bg-obsidian-900 flex items-center justify-center border border-obsidian-700 text-3xl">
+                    🍺
+                </div>
+                <div>
+                    <h3 id="modal-title" class="text-2xl font-bold text-white">Mod Name</h3>
+                    <div id="modal-tags" class="flex flex-wrap gap-2 mt-1">
+                        <!-- Tags inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <p id="modal-description" class="text-gray-300 text-sm mb-6 leading-relaxed">
+                Detaillierte Beschreibung der Modifikationen...
+            </p>
+
+            <!-- Dependency Code Section -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Entwickler Integration (build.gradle)</label>
+                    <button onclick="copyCode()" class="text-xs text-emerald-glow hover:underline flex items-center gap-1">
+                        <i class="fa-regular fa-copy"></i>
+                        <span>Kopieren</span>
+                    </button>
+                </div>
+                <pre class="bg-obsidian-900 border border-obsidian-700 p-4 rounded-xl text-xs font-mono text-emerald-300 overflow-x-auto"><code id="modal-code">// Gradle Dependency
+dependencies {
+    modImplementation "net.cbek.mod:example-mod:1.2.0"
+}</code></pre>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <a id="modal-download-btn" href="#" target="_blank" class="flex-1 py-3 rounded-xl bg-modrinth hover:bg-emerald-500 text-obsidian-900 font-bold text-center text-sm transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Auf Modrinth herunterladen</span>
+                </a>
+                <button onclick="closeModal()" class="py-3 px-6 rounded-xl bg-obsidian-700 hover:bg-obsidian-600 text-white font-medium text-sm transition-colors">
+                    Schließen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="relative z-10 glass-panel border-t border-obsidian-800 text-gray-400 text-sm py-10 mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center space-x-3">
+                <span class="font-pixel text-2xl font-bold text-white enchantment-glow">CbEK</span>
+                <span class="text-xs text-gray-500">| © 2026 CbEK Modding Organization. Not affiliated with Mojang Studios or Microsoft.</span>
+            </div>
+
+            <div class="flex space-x-6">
+                <a href="https://modrinth.com" target="_blank" class="hover:text-modrinth transition-colors">Modrinth</a>
+                <a href="https://github.com" target="_blank" class="hover:text-white transition-colors">GitHub Pages</a>
+                <a href="https://discord.gg" target="_blank" class="hover:text-indigo-400 transition-colors">Discord Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Web Audio Synthesizer (No external audio files required)
+        let audioMuted = false;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function playSound(type) {
+            if (audioMuted) return;
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'hover') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.05);
+                    gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.05);
+                } else if (type === 'click') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.08);
+                    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.08);
+                }
+            } catch (e) {
+                // Audio Context fallback handling
+            }
+        }
+
+        function toggleAudio() {
+            audioMuted = !audioMuted;
+            const icon = document.getElementById('audio-icon');
+            if (audioMuted) {
+                icon.className = 'fa-solid fa-volume-xmark text-gray-500';
+            } else {
+                icon.className = 'fa-solid fa-volume-high text-emerald-glow';
+                playSound('click');
+            }
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Mod Data Store
+        const modsData = [
+            {
+                id: 'drinkmod',
+                title: 'DrinkMod / Thirst Mechanics',
+                category: 'fabric',
+                icon: '🍺',
+                downloads: '450K+',
+                version: '1.21.x',
+                summary: 'Realistische Durst-Mechanik für Minecraft mit Feldflaschen, Tränken und Wasserreinigung.',
+                description: 'DrinkMod erweitert das Überlebensgefühl um ein dynamisches Durstsystem. Überprüfe deinen Hydratationswert, koche Wasser über dem Lagerfeuer und braue erfrischende Säfte für temporäre Buffs!',
+                tags: ['Fabric', 'Forge', 'Survival', '1.21.x'],
+                code: 'dependencies {\n    modImplementation "com.cbek.mod:drinkmod-fabric:2.1.0"\n}'
+            },
+            {
+                id: 'cbek-core',
+                title: 'CbEK Core / Utilities',
+                category: 'fabric',
+                icon: '⚡',
+                downloads: '820K+',
+                version: '1.20.x - 1.21.x',
+                summary: 'Erforderliche Utility-Bibliothek für alle CbEK Mods mit optimierter Performance.',
+                description: 'Enthält gemeinsame GUI-Komponenten, benutzerdefinierte Networking-Pakete und Performancedaten-Helper, die von allen anderen CbEK Mods genutzt werden.',
+                tags: ['Fabric', 'NeoForge', 'Library', '1.21.x'],
+                code: 'dependencies {\n    modImplementation "com.cbek.mod:cbek-core:1.5.4"\n}'
+            },
+            {
+                id: 'crumbl-expansion',
+                title: 'Crumbl Expansion',
+                category: 'forge',
+                icon: '🍪',
+                downloads: '120K+',
+                version: '1.21.x',
+                summary: 'Fügt mehr als 30+ gebackene Leckereien, Öfen und Buff-Food zum Spiel hinzu.',
+                description: 'Crumbl Expansion verwandelt das Kochen in Minecraft in ein detailliertes Minispiel. Backe Kekse, Kuchen und Spezialitäten mit eigenen Effekten.',
+                tags: ['Forge', 'Food', '1.21.x'],
+                code: 'dependencies {\n    modImplementation "com.cbek.mod:crumbl-expansion:1.0.2"\n}'
+            },
+            {
+                id: 'obsidian-machinery',
+                title: 'Obsidian Machinery',
+                category: 'forge',
+                icon: '⚙️',
+                downloads: '95K+',
+                version: '1.20.4',
+                summary: 'Leichtgewichtige Tech-Mod für automatisierte Erzverarbeitung und Redstone-Power.',
+                description: 'Baut automatische Mühlen, Solarpanele und Obsidian-Generatoren ohne überflüssigen Bloatware-Code.',
+                tags: ['Forge', 'Tech', 'Redstone'],
+                code: 'dependencies {\n    modImplementation "com.cbek.mod:obsidian-machinery:0.9.1"\n}'
+            }
+        ];
+
+        // Render Mod Cards
+        function renderMods(items) {
+            const grid = document.getElementById('mod-grid');
+            grid.innerHTML = items.map(mod => `
+                <div class="glass-panel rounded-2xl p-6 border border-obsidian-700 hover:border-emerald-glow/50 card-glow transition-all flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="w-14 h-14 rounded-xl bg-obsidian-900 border border-obsidian-700 flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform">
+                                ${mod.icon}
+                            </div>
+                            <span class="px-2.5 py-1 rounded-md bg-obsidian-800 border border-obsidian-700 text-xs text-emerald-glow font-mono">
+                                <i class="fa-solid fa-download text-[10px] mr-1"></i>${mod.downloads}
+                            </span>
+                        </div>
+
+                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-emerald-glow transition-colors">${mod.title}</h3>
+                        <p class="text-gray-400 text-xs leading-relaxed mb-4">${mod.summary}</p>
+                    </div>
+
+                    <div>
+                        <div class="flex flex-wrap gap-1.5 mb-5">
+                            ${mod.tags.map(tag => `<span class="px-2 py-0.5 rounded bg-obsidian-900/80 text-[10px] text-gray-300 font-mono border border-obsidian-700">${tag}</span>`).join('')}
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button onclick="openModal('${mod.id}'); playSound('click')" class="flex-1 py-2.5 rounded-lg bg-obsidian-700 hover:bg-obsidian-600 text-white font-medium text-xs border border-obsidian-600 transition-colors">
+                                Details & Code
+                            </button>
+                            <a href="https://modrinth.com" target="_blank" onclick="playSound('click')" class="p-2.5 rounded-lg bg-modrinth/10 hover:bg-modrinth text-modrinth hover:text-obsidian-900 border border-modrinth/30 transition-all" title="Modrinth Direct Download">
+                                <i class="fa-solid fa-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Filter Functionality
+        function filterMods(category) {
+            playSound('click');
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-emerald-500', 'text-obsidian-900');
+                btn.classList.add('bg-obsidian-800', 'text-gray-300');
+            });
+            event.target.classList.remove('bg-obsidian-800', 'text-gray-300');
+            event.target.classList.add('bg-emerald-500', 'text-obsidian-900');
+
+            if (category === 'all') {
+                renderMods(modsData);
+            } else {
+                const filtered = modsData.filter(m => m.category === category || m.tags.map(t=>t.toLowerCase()).includes(category));
+                renderMods(filtered);
+            }
+        }
+
+        // Modal Functions
+        function openModal(modId) {
+            const mod = modsData.find(m => m.id === modId);
+            if (!mod) return;
+
+            document.getElementById('modal-icon').innerText = mod.icon;
+            document.getElementById('modal-title').innerText = mod.title;
+            document.getElementById('modal-description').innerText = mod.description;
+            document.getElementById('modal-code').innerText = mod.code;
+            
+            const tagsContainer = document.getElementById('modal-tags');
+            tagsContainer.innerHTML = mod.tags.map(t => `<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-glow text-xs border border-emerald-500/20">${t}</span>`).join('');
+
+            document.getElementById('mod-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            playSound('click');
+            document.getElementById('mod-modal').classList.add('hidden');
+        }
+
+        function copyCode() {
+            playSound('click');
+            const code = document.getElementById('modal-code').innerText;
+            const el = document.createElement('textarea');
+            el.value = code;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            alert('Gradle Code-Snippet in Zwischenablage kopiert!');
+        }
+
+        // Three.js Interactive Floating Minecraft Blocks
+        function init3DBackground() {
+            const container = document.getElementById('canvas-container');
+            const scene = new THREE.Scene();
+
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 15;
+
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0x00ff85, 0.8);
+            dirLight.position.set(10, 20, 15);
+            scene.add(dirLight);
+
+            // Cube Colors (Gras, Redstone, Emerald, Diamond)
+            const materials = [
+                new THREE.MeshStandardMaterial({ color: 0x00FF85, roughness: 0.3 }), // Emerald
+                new THREE.MeshStandardMaterial({ color: 0x00E5FF, roughness: 0.3 }), // Diamond
+                new THREE.MeshStandardMaterial({ color: 0xFF2244, roughness: 0.4 }), // Redstone
+                new THREE.MeshStandardMaterial({ color: 0x55AA33, roughness: 0.8 }), // Grass
+            ];
+
+            const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+            const cubes = [];
+
+            // Spawn random cubes floating in background
+            for (let i = 0; i < 35; i++) {
+                const mat = materials[Math.floor(Math.random() * materials.length)];
+                const cube = new THREE.Mesh(geometry, mat);
+
+                cube.position.x = (Math.random() - 0.5) * 30;
+                cube.position.y = (Math.random() - 0.5) * 30;
+                cube.position.z = (Math.random() - 0.5) * 20;
+
+                cube.rotation.x = Math.random() * Math.PI;
+                cube.rotation.y = Math.random() * Math.PI;
+
+                cube.userData = {
+                    rotSpeedX: (Math.random() - 0.5) * 0.01,
+                    rotSpeedY: (Math.random() - 0.5) * 0.01,
+                    floatSpeed: 0.005 + Math.random() * 0.01
+                };
+
+                scene.add(cube);
+                cubes.push(cube);
+            }
+
+            // Mouse Interaction
+            let mouseX = 0;
+            let mouseY = 0;
+            window.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+                mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+            });
+
+            // Animation Loop
+            function animate() {
+                requestAnimationFrame(animate);
+
+                cubes.forEach(cube => {
+                    cube.rotation.x += cube.userData.rotSpeedX;
+                    cube.rotation.y += cube.userData.rotSpeedY;
+
+                    cube.position.y += Math.sin(Date.now() * 0.001 + cube.position.x) * 0.003;
+                });
+
+                camera.position.x += (mouseX * 2 - camera.position.x) * 0.03;
+                camera.position.y += (-mouseY * 2 - camera.position.y) * 0.03;
+                camera.lookAt(scene.position);
+
+                renderer.render(scene, camera);
+            }
+
+            // Window Resize
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            animate();
+        }
+
+        // Initialize App on DOM Load
+        window.onload = function() {
+            renderMods(modsData);
+            init3DBackground();
+        };
+    </script>
+</body>
+</html>
